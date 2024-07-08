@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Unit Tests') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Integration Tests') {
+            steps {
+                sh 'mvn verify'
+            }
+        }
+        stage('E2E Tests') {
+            steps {
+                sh 'mvn clean test -Dtest=UserJourneyTest'
+            }
+        }
+        stage('Performance Tests') {
+            steps {
+                sh 'jmeter -n -t automated-testing/performance-tests/performance-test-scripts/LoadTest.jmx -l load_test_results.jtl'
+            }
+        }
+    }
+    post {
+        always {
+            junit 'target/surefire-reports/*.xml'
+            archiveArtifacts artifacts: 'load_test_results.jtl', allowEmptyArchive: true
+        }
+    }
+}
